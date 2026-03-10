@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hashira — AI Study Companion</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   HASHIRA v2 — Complete UI
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#07090f;--navy2:#0e1420;--navy3:#151d2e;--navy4:#1c273d;--navy5:#243050;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --gold:#f0b429;--gold-d:rgba(240,180,41,.12);--gold-g:rgba(240,180,41,.3);
+  --green:#10b981;--green-d:rgba(16,185,129,.12);
+  --blue:#3b82f6;--red:#ef4444;--purple:#8b5cf6;
+  --t1:#f1f5f9;--t2:#94a3b8;--t3:#475569;
+  --font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:14px;--r-sm:8px;--shadow:0 8px 32px rgba(0,0,0,.5);
+  --sidebar:260px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--navy);color:var(--t1);font-size:14px;line-height:1.6}
+button{cursor:pointer;font-family:var(--font)}
+input,textarea{font-family:var(--font)}
+
+/* ── SHELL ── */
+.shell{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar);min-width:var(--sidebar);background:var(--navy2);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  overflow:hidden;transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:200;
+}
+.sb-top{flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:12px}
+.sb-top::-webkit-scrollbar{width:3px}
+.sb-top::-webkit-scrollbar-thumb{background:var(--navy5);border-radius:10px}
+
+/* Brand */
+.brand{display:flex;align-items:center;gap:10px;padding:6px 4px 10px}
+.b-flame{font-size:26px;filter:drop-shadow(0 0 10px var(--gold-g));animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.b-name{font-size:17px;font-weight:800;letter-spacing:-.5px}
+.b-sub{font-size:10px;color:var(--t3)}
+
+.divider{height:1px;background:var(--border);margin:2px 0}
+.sec-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);padding:0 4px}
+
+/* Mode pills */
+.mode-grp{display:flex;flex-direction:column;gap:6px}
+.mpill{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--t2);text-align:left;transition:all .2s;width:100%}
+.mpill:hover{background:var(--navy4);color:var(--t1)}
+.mpill.active{background:var(--gold-d);border-color:var(--gold);color:var(--gold)}
+.mpill-icon{font-size:17px}
+.mpill-title{font-size:12px;font-weight:600;line-height:1}
+.mpill-desc{font-size:10px;opacity:.6;margin-top:1px}
+
+/* Action buttons */
+.act-btn{display:flex;align-items:center;gap:8px;width:100%;padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--t2);font-size:12.5px;transition:all .2s;text-align:left}
+.act-btn:hover{background:var(--navy4);color:var(--t1)}
+.act-btn.active{background:var(--gold-d);border-color:var(--gold);color:var(--gold)}
+.act-btn.danger:hover{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.35);color:#fca5a5}
+.act-btn.green-hover:hover{background:var(--green-d);border-color:rgba(16,185,129,.3);color:var(--green)}
+
+/* History list */
+.hist-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto}
+.hist-list::-webkit-scrollbar{width:3px}
+.hist-list::-webkit-scrollbar-thumb{background:var(--navy5);border-radius:10px}
+.hist-item{display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:var(--r-sm);border:1px solid transparent;cursor:pointer;transition:all .2s;position:relative}
+.hist-item:hover{background:var(--navy4);border-color:var(--border)}
+.hist-item.active{background:var(--navy4);border-color:var(--border2)}
+.hist-title{flex:1;font-size:11.5px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-del{opacity:0;font-size:12px;padding:2px 5px;border-radius:4px;border:none;background:rgba(239,68,68,.15);color:#fca5a5;transition:all .2s}
+.hist-item:hover .hist-del{opacity:1}
+
+/* Sidebar footer */
+.sb-footer{padding:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.user-chip{display:flex;align-items:center;gap:7px;flex:1;min-width:0}
+.user-av{width:28px;height:28px;border-radius:7px;background:var(--navy4);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.user-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:10px;color:var(--t3)}
+.logout-btn{padding:5px 9px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--t3);font-size:11px;transition:all .2s}
+.logout-btn:hover{color:var(--red);border-color:rgba(239,68,68,.3)}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* Topbar */
+.topbar{
+  display:flex;align-items:center;gap:10px;padding:12px 18px;
+  background:var(--navy2);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.hamburger{display:none;background:none;border:none;color:var(--t2);font-size:20px;padding:4px 7px;border-radius:6px}
+.hamburger:hover{background:var(--navy4);color:var(--t1)}
+.tb-center{flex:1;display:flex;align-items:center;gap:10px}
+.tb-status{display:flex;align-items:center;gap:7px}
+.pulse{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 7px var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.tb-name{font-weight:700;font-size:15px}
+.mode-chip{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--gold-d);color:var(--gold);border:1px solid rgba(240,180,41,.25);transition:all .3s}
+.mode-chip.exam{background:var(--green-d);color:var(--green);border-color:rgba(16,185,129,.25)}
+.tb-right{display:flex;gap:5px}
+.tb-btn{background:var(--navy3);border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:14px;color:var(--t2);transition:all .2s}
+.tb-btn:hover{background:var(--navy4);border-color:var(--border2)}
+
+/* ── PANEL SYSTEM (right panels) ── */
+.panel-overlay{display:none;position:fixed;inset:0;z-index:400}
+.panel-overlay.open{display:block}
+.panel-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.panel{position:absolute;right:0;top:0;height:100%;width:min(380px,90vw);background:var(--navy2);border-left:1px solid var(--border2);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.panel-overlay.open .panel{transform:translateX(0)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.panel-title{font-size:14px;font-weight:700;color:var(--gold)}
+.panel-close{background:var(--navy3);border:1px solid var(--border);color:var(--t2);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.panel-close:hover{background:var(--navy4);color:var(--t1)}
+.panel-body{flex:1;overflow-y:auto;padding:16px}
+.panel-body::-webkit-scrollbar{width:3px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--navy4);border-radius:10px}
+
+/* Saved items */
+.saved-item{background:var(--navy3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;position:relative}
+.saved-msg{font-size:12.5px;line-height:1.6;color:var(--t1);max-height:80px;overflow:hidden;text-overflow:ellipsis}
+.saved-note{font-size:11px;color:var(--gold);margin-top:5px;font-style:italic}
+.saved-time{font-size:10px;color:var(--t3);margin-top:4px}
+.saved-del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--t3);font-size:13px;opacity:0;transition:all .2s}
+.saved-item:hover .saved-del{opacity:1;color:#fca5a5}
+.save-empty{text-align:center;color:var(--t3);font-size:13px;padding:30px 0}
+
+/* ── MESSAGES ── */
+.messages{flex:1;overflow-y:auto;padding:24px 20px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+.messages::-webkit-scrollbar{width:4px}
+.messages::-webkit-scrollbar-thumb{background:var(--navy4);border-radius:10px}
+
+/* Welcome */
+.welcome{display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 28px 30px;background:var(--navy2);border:1px solid var(--border);border-radius:20px;gap:12px;max-width:600px;margin:auto;animation:fadeUp .5s ease}
+.w-flame{font-size:46px;filter:drop-shadow(0 0 16px var(--gold-g));animation:float 3s ease-in-out infinite}
+.w-title{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.w-title em{font-style:normal;color:var(--gold)}
+.w-sub{font-size:13px;color:var(--t2);max-width:440px;line-height:1.7}
+.chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:6px}
+.chip{background:var(--navy3);border:1px solid var(--border2);color:var(--t2);padding:7px 13px;border-radius:20px;font-size:12px;transition:all .2s}
+.chip:hover{background:var(--gold-d);border-color:var(--gold);color:var(--gold);transform:translateY(-1px)}
+
+/* Message rows */
+.msg-row{display:flex;gap:10px;animation:fadeUp .25s ease}
+.msg-row.user{flex-direction:row-reverse}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.msg-av{width:33px;height:33px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px}
+.msg-av.bot{background:var(--navy3);border:1px solid var(--border2)}
+.msg-av.user{background:rgba(59,91,219,.2);border:1px solid rgba(59,91,219,.35)}
+
+.msg-body{display:flex;flex-direction:column;gap:4px;max-width:74%}
+.msg-row.user .msg-body{align-items:flex-end}
+
+.msg-meta{display:flex;align-items:center;gap:5px}
+.msg-row.user .msg-meta{flex-direction:row-reverse}
+.msg-tag{font-size:10px;font-weight:700;padding:1px 7px;border-radius:9px;background:var(--gold-d);color:var(--gold);border:1px solid rgba(240,180,41,.18)}
+.msg-tag.exam{background:var(--green-d);color:var(--green);border-color:rgba(16,185,129,.18)}
+.msg-time{font-size:10px;color:var(--t3)}
+
+.bubble{padding:12px 16px;font-size:13.5px;line-height:1.75;word-break:break-word}
+.bubble.bot{background:var(--navy3);border:1px solid var(--border);border-radius:3px 14px 14px 14px;color:var(--t1)}
+.bubble.user{background:linear-gradient(135deg,#3b5bdb,#2f49c9);border-radius:14px 3px 14px 14px;color:#fff}
+
+/* Bot bubble rich content */
+.bubble.bot strong{color:var(--gold);font-weight:600}
+.bubble.bot em{color:#a78bfa;font-style:italic}
+.bubble.bot h1,.bubble.bot h2,.bubble.bot h3{font-size:14px;font-weight:700;margin:10px 0 4px;color:var(--gold)}
+.bubble.bot p{margin-bottom:5px}.bubble.bot p:last-child{margin-bottom:0}
+.bubble.bot ul,.bubble.bot ol{margin:5px 0 5px 18px}
+.bubble.bot li{margin-bottom:3px}
+.bubble.bot code{font-family:var(--mono);font-size:11.5px;background:var(--navy);padding:1px 6px;border-radius:4px;color:#f9a8d4;border:1px solid var(--border2)}
+.bubble.bot pre{background:#060810;border:1px solid var(--border2);border-radius:9px;padding:13px;overflow-x:auto;margin:8px 0}
+.bubble.bot pre code{background:none;border:none;padding:0;color:#e2e8f0;font-size:12px}
+.bubble.bot blockquote{border-left:3px solid var(--gold);padding:5px 12px;margin:6px 0;color:var(--t2);font-style:italic;background:var(--navy4);border-radius:0 7px 7px 0}
+.bubble.bot a{color:var(--gold);text-decoration:underline}
+.bubble.bot hr{border:none;border-top:1px solid var(--border2);margin:8px 0}
+.bubble.bot table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+.bubble.bot th,.bubble.bot td{padding:7px 10px;border:1px solid var(--border2);text-align:left}
+.bubble.bot th{background:var(--navy4);color:var(--gold);font-weight:600}
+
+/* Image preview in chat */
+.msg-img{max-width:240px;border-radius:10px;margin-bottom:6px;border:1px solid var(--border2)}
+
+/* Save button on bot messages */
+.save-msg-btn{margin-top:5px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--t3);font-size:11px;padding:3px 9px;transition:all .2s;display:inline-flex;align-items:center;gap:4px}
+.save-msg-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-d)}
+
+/* ── TYPING ── */
+.typing-row{display:flex;align-items:center;gap:9px;padding:0 20px 8px;animation:fadeUp .2s ease}
+.typing-av{width:33px;height:33px;background:var(--navy3);border:1px solid var(--border2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.typing-dots{display:flex;gap:4px;background:var(--navy3);border:1px solid var(--border);border-radius:11px;padding:10px 14px}
+.dot{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:dotB 1.3s infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes dotB{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-5px);opacity:1}}
+.typing-lbl{font-size:11px;color:var(--t3);font-style:italic}
+
+/* ── IMAGE PREVIEW BAR ── */
+.img-preview-bar{padding:0 18px 8px;display:none;align-items:center;gap:10px}
+.img-preview-bar.show{display:flex}
+.img-thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;border:2px solid var(--gold)}
+.img-name{font-size:12px;color:var(--t2);flex:1}
+.img-remove{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:6px;padding:4px 9px;font-size:12px}
+.img-remove:hover{background:rgba(239,68,68,.25)}
+
+/* ── INPUT BAR ── */
+.inputbar{padding:12px 18px 16px;background:var(--navy2);border-top:1px solid var(--border);flex-shrink:0}
+.input-card{display:flex;align-items:flex-end;gap:8px;background:var(--navy3);border:1.5px solid var(--border2);border-radius:13px;padding:8px 8px 8px 14px;transition:border-color .2s}
+.input-card:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-d)}
+#user-input{flex:1;background:none;border:none;outline:none;color:var(--t1);font-size:13.5px;resize:none;max-height:120px;line-height:1.6;padding:2px 0}
+#user-input::placeholder{color:var(--t3)}
+.input-btns{display:flex;gap:5px;align-items:center;flex-shrink:0}
+
+.ib{width:37px;height:37px;border-radius:9px;border:1.5px solid var(--border2);background:var(--navy4);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--t2);transition:all .2s}
+.ib:hover{border-color:var(--gold);background:var(--gold-d);color:var(--gold)}
+.ib.listening{background:rgba(239,68,68,.12);border-color:#f87171;animation:recPulse 1s infinite}
+@keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.3)}50%{box-shadow:0 0 0 5px rgba(239,68,68,0)}}
+.ib.send{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.ib.send:hover{background:#f6c90e;box-shadow:0 3px 14px var(--gold-g);transform:scale(1.05)}
+.ib.send:disabled{background:var(--navy4);border-color:var(--border);color:var(--t3);transform:none;box-shadow:none}
+.ib.send svg{display:block}
+
+.input-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--t3);padding:0 2px}
+
+/* ── MODAL ── */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:600;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-ov.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--navy2);border:1px solid var(--border2);border-radius:20px;width:min(560px,93vw);max-height:76vh;display:flex;flex-direction:column;box-shadow:var(--shadow);animation:modalPop .25s ease}
+@keyframes modalPop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;color:var(--gold)}
+.modal-close{background:var(--navy3);border:1px solid var(--border);color:var(--t2);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.modal-close:hover{background:var(--navy4);color:var(--t1)}
+.modal-body{padding:20px;overflow-y:auto;font-size:13.5px;line-height:1.72;color:var(--t2)}
+.modal-body::-webkit-scrollbar{width:3px}
+.modal-body::-webkit-scrollbar-thumb{background:var(--navy4);border-radius:10px}
+.modal-body strong{color:var(--gold)}.modal-body h1,.modal-body h2,.modal-body h3{color:var(--t1);font-size:14px;margin:9px 0 4px}
+.modal-body ul,.modal-body ol{margin:5px 0 5px 18px}.modal-body li{margin-bottom:3px}
+.modal-body blockquote{border-left:3px solid var(--gold);padding:5px 11px;color:var(--t3);background:var(--navy4);border-radius:0 6px 6px 0;margin:6px 0}
+.modal-body code{font-family:var(--mono);background:var(--navy4);padding:2px 6px;border-radius:4px;font-size:12px}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--navy3);border:1px solid var(--border2);color:var(--t1);padding:9px 18px;border-radius:22px;font-size:12.5px;font-weight:600;z-index:999;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow);white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── TTS speaking indicator ── */
+.tts-bar{display:none;align-items:center;gap:8px;padding:7px 14px;background:var(--green-d);border:1px solid rgba(16,185,129,.2);border-radius:9px;font-size:12px;color:var(--green);margin-bottom:8px}
+.tts-bar.speaking{display:flex}
+.tts-waves{display:flex;gap:3px;align-items:center}
+.tts-wave{width:3px;background:var(--green);border-radius:2px;animation:wave 1s ease-in-out infinite}
+.tts-wave:nth-child(1){height:8px;animation-delay:0s}
+.tts-wave:nth-child(2){height:14px;animation-delay:.1s}
+.tts-wave:nth-child(3){height:20px;animation-delay:.2s}
+.tts-wave:nth-child(4){height:14px;animation-delay:.3s}
+.tts-wave:nth-child(5){height:8px;animation-delay:.4s}
+@keyframes wave{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.4)}}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  .sidebar{position:fixed;top:0;left:0;height:100%;transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .hamburger{display:block}
+  .messages{padding:14px 12px}
+  .msg-body{max-width:88%}
+  .inputbar{padding:10px 12px 14px}
+}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- SUMMARY MODAL -->
+<div id="sum-modal" class="modal-ov">
+  <div class="modal-box">
+    <div class="modal-head"><span>📋 Session Summary</span><button class="modal-close" onclick="closeModal('sum-modal')">✕</button></div>
+    <div class="modal-body" id="sum-body"></div>
+  </div>
+</div>
+
+<!-- SAVED MESSAGES PANEL -->
+<div id="saved-panel" class="panel-overlay">
+  <div class="panel-backdrop" onclick="closePanel('saved-panel')"></div>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">🔖 Saved Messages</span>
+      <button class="panel-close" onclick="closePanel('saved-panel')">✕</button>
+    </div>
+    <div class="panel-body" id="saved-body"></div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-top">
+
+      <div class="brand">
+        <div class="b-flame">🔥</div>
+        <div><div class="b-name">Hashira</div><div class="b-sub">AI Study Companion</div></div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="sec-label">Study Mode</div>
+      <div class="mode-grp">
+        <button class="mpill active" data-mode="normal">
+          <span class="mpill-icon">📚</span>
+          <div><div class="mpill-title">Normal</div><div class="mpill-desc">Step-by-step</div></div>
+        </button>
+        <button class="mpill" data-mode="exam">
+          <span class="mpill-icon">⚡</span>
+          <div><div class="mpill-title">Exam</div><div class="mpill-desc">Bullet points</div></div>
+        </button>
+      </div>
+
+      <div class="divider"></div>
+      <div class="sec-label">Actions</div>
+      <button class="act-btn" id="new-chat-btn">🆕 New Chat</button>
+      <button class="act-btn" id="sum-btn">📋 Summarize</button>
+      <button class="act-btn green-hover" id="saved-btn">🔖 Saved Messages</button>
+      <button class="act-btn danger" id="clear-btn">🗑️ Clear Chat</button>
+
+      <div class="divider"></div>
+      <div class="sec-label">Chat History</div>
+      <div class="hist-list" id="hist-list">
+        <div style="font-size:11px;color:var(--t3);padding:6px 4px">Loading sessions...</div>
+      </div>
+
+    </div>
+    <div class="sb-footer">
+      <div class="user-chip">
+        <div class="user-av" id="sb-avatar">🎓</div>
+        <div>
+          <div class="user-name" id="sb-username">User</div>
+          <div class="user-role" id="sb-role">student</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">⏏</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="tb-center">
+        <div class="tb-status">
+          <span class="pulse"></span>
+          <span class="tb-name">Hashira</span>
+        </div>
+        <div class="mode-chip" id="mode-chip">📚 Normal Mode</div>
+      </div>
+      <div class="tb-right">
+        <button class="tb-btn" title="Summarize" id="tb-sum">📋</button>
+        <button class="tb-btn" title="Saved" id="tb-saved">🔖</button>
+        <button class="tb-btn" title="Clear" id="tb-clear">🗑️</button>
+        {% if role == 'admin' %}<button class="tb-btn" onclick="window.location='/admin'" title="Admin">⚙️</button>{% endif %}
+      </div>
+    </div>
+
+    <!-- MESSAGES - FIXED (empty on load) -->
+    <div class="messages" id="messages"></div>
+
+    <!-- TYPING -->
+    <div class="typing-row" id="typing-row" style="display:none">
+      <div class="typing-av">🔥</div>
+      <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <span class="typing-lbl">Hashira is thinking...</span>
+    </div>
+
+    <!-- TTS BAR -->
+    <div class="tts-bar" id="tts-bar">
+      <div class="tts-waves">
+        <div class="tts-wave"></div><div class="tts-wave"></div><div class="tts-wave"></div>
+        <div class="tts-wave"></div><div class="tts-wave"></div>
+      </div>
+      <span>Hashira is speaking...</span>
+      <button onclick="stopSpeech()" style="margin-left:auto;background:none;border:none;color:var(--green);font-size:12px;">■ Stop</button>
+    </div>
+
+    <!-- IMAGE PREVIEW BAR -->
+    <div class="img-preview-bar" id="img-bar">
+      <img id="img-thumb" class="img-thumb" src="" alt=""/>
+      <span class="img-name" id="img-name"></span>
+      <button class="img-remove" onclick="removeImage()">✕ Remove</button>
+    </div>
+
+    <!-- INPUT BAR -->
+    <div class="inputbar">
+      <div class="input-card">
+        <textarea id="user-input" placeholder="Ask Hashira anything... or upload an image 📷" rows="1" maxlength="2000"></textarea>
+        <div class="input-btns">
+          <!-- Image upload -->
+          <label class="ib" title="Upload image" style="cursor:pointer">
+            📷<input type="file" id="img-input" accept="image/*" style="display:none" onchange="onImageSelect(this)"/>
+          </label>
+          <!-- Voice input -->
+          <button class="ib" id="voice-btn" title="Voice input">🎤</button>
+          <!-- TTS toggle -->
+          <button class="ib" id="tts-btn" title="Toggle voice output">🔊</button>
+          <!-- Send -->
+          <button class="ib send" id="send-btn" title="Send">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="input-meta">
+        <span id="voice-status">Enter to send · Shift+Enter newline · 📷 Upload image</span>
+        <span id="char-count">0 / 2000</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   HASHIRA v2 — Complete Frontend JS
+   ============================================================ */
+
+// ── State ──────────────────────────────────────────────────
+let currentMode    = 'normal';
+let currentSession = null;
+let isBusy         = false;
+let isListening    = false;
+let ttsEnabled     = false;
+let recognition    = null;
+let toastTimer     = null;
+let pendingImage   = null;   // {file, b64, name}
+
+// ── DOM ────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const msgs       = $('messages');
+const userInput  = $('user-input');
+const sendBtn    = $('send-btn');
+const voiceBtn   = $('voice-btn');
+const ttsBtn     = $('tts-btn');
+const typingRow  = $('typing-row');
+const modeChip   = $('mode-chip');
+const ttsBar     = $('tts-bar');
+
+// ── INIT ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  initVoice();
+  await loadMe();
+  await loadSessions();
+
+  // Textarea
+  userInput.addEventListener('input', () => {
+    userInput.style.height = 'auto';
+    userInput.style.height = Math.min(userInput.scrollHeight,120)+'px';
+    $('char-count').textContent = userInput.value.length+' / 2000';
+  });
+  userInput.addEventListener('keydown', e => {
+    if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+  });
+
+  // Buttons
+  sendBtn.addEventListener('click', sendMessage);
+  voiceBtn.addEventListener('click', toggleVoice);
+  ttsBtn.addEventListener('click', toggleTTS);
+  $('new-chat-btn').addEventListener('click', newChat);
+  $('sum-btn').addEventListener('click', openSummary);
+  $('clear-btn').addEventListener('click', clearChat);
+  $('saved-btn').addEventListener('click', openSaved);
+  $('tb-sum').addEventListener('click', openSummary);
+  $('tb-clear').addEventListener('click', clearChat);
+  $('tb-saved').addEventListener('click', openSaved);
+  $('hamburger').addEventListener('click', () => $('sidebar').classList.toggle('open'));
+  document.querySelectorAll('.mpill').forEach(p => p.addEventListener('click', () => setMode(p.dataset.mode)));
+  userInput.focus();
+});
+
+// ── USER INFO ────────────────────────────────────────────────
+async function loadMe() {
+  try {
+    const d = await apiFetch('/api/me');
+    $('sb-avatar').textContent   = d.avatar || '🎓';
+    $('sb-username').textContent = d.username;
+    $('sb-role').textContent     = d.role;
+    if (d.current_session) currentSession = d.current_session;
+  } catch {}
+}
+
+// ── SESSIONS / HISTORY ──────────────────────────────────────
+async function loadSessions() {
+  const d = await apiFetch('/api/sessions').catch(() => ({sessions:[]}));
+  const list = $('hist-list');
+  list.innerHTML = '';
+
+  if (!d.sessions || d.sessions.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--t3);padding:6px 4px">No history yet</div>';
+    await newChat();
+    return;
+  }
+
+  d.sessions.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'hist-item' + (s.session_uid === currentSession ? ' active' : '');
+    item.innerHTML = `<span style="font-size:12px">💬</span><span class="hist-title">${esc(s.title)}</span><button class="hist-del" onclick="deleteSession('${s.session_uid}',event)">✕</button>`;
+    item.addEventListener('click', () => loadSession(s.session_uid));
+    list.appendChild(item);
+  });
+
+  // Load most recent session if none active
+  if (!currentSession && d.sessions.length > 0) {
+    await loadSession(d.sessions[0].session_uid);
+  }
+}
+
+async function loadSession(uid) {
+  currentSession = uid;
+  const d = await apiFetch(`/api/sessions/${uid}`).catch(() => null);
+  if (!d) return;
+
+  // Clear messages & hide welcome
+  msgs.innerHTML = '';
+  if (d.messages && d.messages.length > 0) {
+    d.messages.forEach(m => appendMsg(m.role==='assistant'?'bot':'user', m.message, m.mode||'normal', false));
+  } else {
+    showWelcome();
+  }
+
+  // Highlight active in sidebar
+  document.querySelectorAll('.hist-item').forEach(el => {
+    el.classList.toggle('active', el.querySelector('.hist-title') &&
+      el.onclick !== null);
+  });
+  // Re-highlight properly
+  document.querySelectorAll('.hist-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.hist-item').forEach(el => {
+    if (el.querySelector('.hist-del')?.getAttribute('onclick')?.includes(uid)) {
+      el.classList.add('active');
+    }
+  });
+  scrollBottom();
+}
+
+async function newChat() {
+  const d = await apiFetch('/api/sessions/new', 'POST').catch(() => null);
+  if (d && d.session_uid) {
+    currentSession = d.session_uid;
+    msgs.innerHTML = '';
+    showWelcome();
+    await loadSessions();
+    toast('🆕 New chat started!');
+  }
+}
+
+async function deleteSession(uid, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this chat session?')) return;
+  await apiFetch(`/api/sessions/${uid}`, 'DELETE');
+  if (currentSession === uid) {
+    currentSession = null;
+    msgs.innerHTML = '';
+    showWelcome();
+  }
+  await loadSessions();
+  toast('🗑️ Session deleted');
+}
+
+function showWelcome() {
+  const w = document.createElement('div');
+  w.className = 'welcome'; w.id = 'welcome';
+  w.innerHTML = `
+    <div class="w-flame">🔥</div>
+    <h1 class="w-title">What would you like to <em>learn</em>?</h1>
+    <p class="w-sub">Ask me anything — explanations, diagrams, resources, or just have a conversation!</p>
+    <div class="chips" id="chips">
+      <button class="chip">Explain Python basics</button>
+      <button class="chip">What is OOP?</button>
+      <button class="chip">Find resources for machine learning</button>
+      <button class="chip">Draw a diagram of a CPU</button>
+      <button class="chip">Explain the OSI model</button>
+      <button class="chip">Help me revise algorithms</button>
+    </div>`;
+  msgs.appendChild(w);
+  wireChips($('chips'));
+}
+
+// ── MODE ────────────────────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mpill').forEach(p => p.classList.toggle('active', p.dataset.mode===mode));
+  modeChip.textContent = mode==='exam' ? '⚡ Exam Mode' : '📚 Normal Mode';
+  modeChip.classList.toggle('exam', mode==='exam');
+  toast(mode==='exam' ? '⚡ Exam Mode — concise bullet answers' : '📚 Normal Mode — step-by-step');
+}
+
+// ── SEND MESSAGE ─────────────────────────────────────────────
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if ((!text && !pendingImage) || isBusy) return;
+
+  const w = $('welcome');
+  if (w) w.remove();
+
+  const displayText = text || '📷 Please explain this image.';
+  appendMsg('user', displayText, currentMode, false, pendingImage?.b64);
+
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  $('char-count').textContent = '0 / 2000';
+
+  isBusy = true;
+  sendBtn.disabled = true;
+  showTyping(true);
+
+  try {
+    const fd = new FormData();
+    fd.append('message', text);
+    fd.append('mode', currentMode);
+    if (currentSession) fd.append('session_uid', currentSession);
+    if (pendingImage) fd.append('image', pendingImage.file);
+
+    const r = await fetch('/api/chat', { method:'POST', body: fd });
+    const d = await r.json();
+
+    if (r.status === 401) { window.location.href='/login'; return; }
+
+    showTyping(false);
+    const reply = d.error ? '⚠️ '+d.error : d.response;
+    appendMsg('bot', reply, d.mode || currentMode, true);
+    currentSession = d.session_uid || currentSession;
+
+    // TTS — speak the response
+    if (ttsEnabled) speak(stripMarkdown(reply));
+
+    // Refresh sessions list for updated title
+    loadSessions();
+  } catch (err) {
+    showTyping(false);
+    appendMsg('bot', '❌ Server error. Is Flask running on port 5000?', currentMode, false);
+  } finally {
+    isBusy = false;
+    sendBtn.disabled = false;
+    removeImage();
+    userInput.focus();
+  }
+}
+
+// ── RENDER MESSAGE ───────────────────────────────────────────
+function appendMsg(role, text, mode, showSave=false, imgB64=null) {
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + role;
+
+  const av = document.createElement('div');
+  av.className = 'msg-av '+role;
+  av.textContent = role==='user' ? ($('sb-avatar').textContent||'🎓') : '🔥';
+
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  if (role==='bot') {
+    const tag = document.createElement('span');
+    tag.className = 'msg-tag'+(mode==='exam'?' exam':'');
+    tag.textContent = mode==='exam'?'⚡ Exam':'📚 Normal';
+    meta.appendChild(tag);
+  }
+  const t = document.createElement('span');
+  t.className = 'msg-time';
+  t.textContent = now();
+  meta.appendChild(t);
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble '+role;
+
+  // Show image if uploaded
+  if (imgB64) {
+    const im = document.createElement('img');
+    im.src = 'data:image/jpeg;base64,'+imgB64;
+    im.className = 'msg-img';
+    bubble.appendChild(im);
+  }
+
+  const content = document.createElement('div');
+  content.innerHTML = role==='bot' ? renderMd(text) : esc(text).replace(/\n/g,'<br>');
+  bubble.appendChild(content);
+
+  body.appendChild(meta);
+  body.appendChild(bubble);
+
+  // Save button on bot messages
+  if (showSave && role==='bot') {
+    const sb = document.createElement('button');
+    sb.className = 'save-msg-btn';
+    sb.innerHTML = '🔖 Save this answer';
+    sb.onclick = () => saveMessage(text);
+    body.appendChild(sb);
+  }
+
+  row.appendChild(av);
+  row.appendChild(body);
+  msgs.appendChild(row);
+  scrollBottom();
+}
+
+// ── IMAGE UPLOAD ─────────────────────────────────────────────
+function onImageSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const b64full = e.target.result; // data:image/...;base64,xxxx
+    const b64     = b64full.split(',')[1];
+    pendingImage  = { file, b64, name: file.name };
+    $('img-thumb').src = b64full;
+    $('img-name').textContent = file.name;
+    $('img-bar').classList.add('show');
+    toast('📷 Image ready — ask your question!');
+  };
+  reader.readAsDataURL(file);
+  input.value = ''; // reset so same file can be selected again
+}
+
+function removeImage() {
+  pendingImage = null;
+  $('img-bar').classList.remove('show');
+  $('img-thumb').src = '';
+  $('img-name').textContent = '';
+}
+
+// ── SAVED MESSAGES ───────────────────────────────────────────
+async function saveMessage(text) {
+  const note = prompt('Add a note (optional):','') || '';
+  const d    = await apiFetch('/api/saved','POST',{message:text,note});
+  if (d.success) toast('🔖 Message saved!');
+}
+
+async function openSaved() {
+  openPanel('saved-panel');
+  const d = await apiFetch('/api/saved').catch(()=>({saved:[]}));
+  const body = $('saved-body');
+  if (!d.saved || d.saved.length===0) {
+    body.innerHTML = '<div class="save-empty">No saved messages yet.<br>Click 🔖 on any bot response to save it!</div>';
+    return;
+  }
+  body.innerHTML = d.saved.map(s => `
+    <div class="saved-item">
+      <div class="saved-msg">${esc(s.message)}</div>
+      ${s.note ? `<div class="saved-note">📝 ${esc(s.note)}</div>` : ''}
+      <div class="saved-time">${s.saved_at.slice(0,16)}</div>
+      <button class="saved-del" onclick="deleteSaved(${s.id},this.closest('.saved-item'))">✕</button>
+    </div>`).join('');
+}
+
+async function deleteSaved(id, el) {
+  await apiFetch(`/api/saved/${id}`,'DELETE');
+  el.remove();
+  toast('🗑️ Removed');
+}
+
+// ── SUMMARIZE ────────────────────────────────────────────────
+async function openSummary() {
+  $('sum-body').innerHTML = '<p style="color:var(--t3)">⏳ Generating summary...</p>';
+  openModal('sum-modal');
+  const d = await apiFetch('/api/summarize','POST').catch(()=>({summary:'Error generating summary.'}));
+  $('sum-body').innerHTML = renderMd(d.summary||'Nothing to summarize yet.');
+}
+
+// ── CLEAR ────────────────────────────────────────────────────
+async function clearChat() {
+  if (!confirm('Clear this chat? Messages will be removed from this session.')) return;
+  await apiFetch('/api/clear','POST');
+  msgs.innerHTML = '';
+  showWelcome();
+  toast('🗑️ Chat cleared!');
+}
+
+// ── LOGOUT ───────────────────────────────────────────────────
+async function doLogout() {
+  await apiFetch('/api/logout','POST');
+  window.location.href = '/login';
+}
+
+// ── VOICE INPUT (Speech Recognition) ────────────────────────
+function initVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { voiceBtn.style.opacity='.35'; voiceBtn.title='Voice: use Chrome'; return; }
+  recognition = new SR();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+  recognition.onresult = e => {
+    let t='';
+    for(let i=e.resultIndex;i<e.results.length;i++) t+=e.results[i][0].transcript;
+    userInput.value=t;
+    userInput.dispatchEvent(new Event('input'));
+  };
+  recognition.onend   = () => setListening(false);
+  recognition.onerror = ev => {
+    setListening(false);
+    if(ev.error==='not-allowed') toast('🎤 Microphone blocked — allow access');
+  };
+}
+
+function toggleVoice() {
+  if(!recognition){toast('🎤 Use Chrome for voice input');return}
+  isListening ? stopVoice() : startVoice();
+}
+function startVoice(){
+  recognition.start(); setListening(true);
+  userInput.value=''; userInput.dispatchEvent(new Event('input'));
+}
+function stopVoice(){ try{recognition.stop()}catch{} setListening(false); }
+function setListening(a){
+  isListening=a;
+  voiceBtn.classList.toggle('listening',a);
+  voiceBtn.textContent=a?'⏹️':'🎤';
+  $('voice-status').textContent=a?'🔴 Listening... speak now!':'Enter to send · Shift+Enter newline · 📷 Upload image';
+  if(a) toast('🎤 Listening...');
+}
+
+// ── TTS (Text-to-Speech / AI Voice Mode) ────────────────────
+let synth = window.speechSynthesis;
+let currentUtterance = null;
+
+function toggleTTS() {
+  ttsEnabled = !ttsEnabled;
+  ttsBtn.style.background   = ttsEnabled ? 'var(--green-d)' : '';
+  ttsBtn.style.borderColor  = ttsEnabled ? 'var(--green)'   : '';
+  ttsBtn.style.color        = ttsEnabled ? 'var(--green)'   : '';
+  toast(ttsEnabled ? '🔊 Voice mode ON — Hashira will speak responses' : '🔇 Voice mode OFF');
+}
+
+function speak(text) {
+  if (!synth || !text) return;
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate  = 0.95;
+  utt.pitch = 1.05;
+  utt.volume = 1;
+  const voices = synth.getVoices();
+  const preferred = voices.find(v => v.lang.startsWith('en') && v.name.includes('Natural'))
+                 || voices.find(v => v.lang.startsWith('en'));
+  if (preferred) utt.voice = preferred;
+
+  utt.onstart = () => ttsBar.classList.add('speaking');
+  utt.onend   = () => ttsBar.classList.remove('speaking');
+  utt.onerror = () => ttsBar.classList.remove('speaking');
+  currentUtterance = utt;
+  synth.speak(utt);
+}
+
+function stopSpeech() {
+  if (synth) synth.cancel();
+  ttsBar.classList.remove('speaking');
+}
+
+function stripMarkdown(text) {
+  return text
+    .replace(/```[\s\S]*?```/g,' ')
+    .replace(/`([^`]+)`/g,'$1')
+    .replace(/\*\*(.+?)\*\*/g,'$1')
+    .replace(/\*(.+?)\*/g,'$1')
+    .replace(/^#+\s/gm,'')
+    .replace(/^[-•]\s/gm,'')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g,'$1')
+    .replace(/\n{2,}/g,'. ')
+    .replace(/\n/g,' ')
+    .trim();
+}
+
+// ── MARKDOWN RENDERER ────────────────────────────────────────
+function renderMd(raw) {
+  let t = esc(raw);
+  t = t.replace(/```[\w]*\n?([\s\S]*?)```/g, (_,c) => `<pre><code>${c.trim()}</code></pre>`);
+  t = t.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  t = t.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  t = t.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  t = t.replace(/^# (.+)$/gm,  '<h1>$1</h1>');
+  t = t.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  t = t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  t = t.replace(/_(.+?)_/g,'<em>$1</em>');
+  t = t.replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>');
+  t = t.replace(/^---$/gm,'<hr>');
+  t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  t = t.replace(/^[ \t]*[-•*]\s+(.+)$/gm,'<li>$1</li>');
+  t = t.replace(/^[ \t]*\d+\.\s+(.+)$/gm,'<li>$1</li>');
+  t = t.replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
+  const parts = t.split(/\n\n+/);
+  return parts.map(p => {
+    p=p.trim();
+    if(!p) return '';
+    if(/^<(h[1-3]|ul|ol|pre|blockquote|hr)/.test(p)) return p;
+    return '<p>'+p.replace(/\n/g,'<br>')+'</p>';
+  }).join('\n');
+}
+
+// ── UTILS ────────────────────────────────────────────────────
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+function now(){ return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) }
+function scrollBottom(){ msgs.scrollTop = msgs.scrollHeight }
+function showTyping(s){ typingRow.style.display=s?'flex':'none'; if(s) scrollBottom() }
+function wireChips(c){ if(!c) return; c.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click',()=>{ userInput.value=ch.textContent.trim(); userInput.dispatchEvent(new Event('input')); sendMessage(); })) }
+
+function openModal(id){ $(id).classList.add('open') }
+function closeModal(id){ $(id).classList.remove('open') }
+function openPanel(id){ $(id).classList.add('open') }
+function closePanel(id){ $(id).classList.remove('open') }
+
+function toast(msg){
+  const el=$('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+async function apiFetch(url, method='GET', body=null) {
+  const opts = { method, headers:{} };
+  if (body && !(body instanceof FormData)) {
+    opts.headers['Content-Type']='application/json';
+    opts.body=JSON.stringify(body);
+  } else if (body) {
+    opts.body=body;
+  }
+  const r = await fetch(url, opts);
+  if (r.status===401){ window.location.href='/login'; throw new Error('Unauthorized'); }
+  return r.json();
+}
+</script>
+</body>
+</html>

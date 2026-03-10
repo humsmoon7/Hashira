@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hashira — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#07090f;--navy2:#0e1420;--navy3:#151d2e;--navy4:#1c273d;
+  --gold:#f0b429;--gold-d:rgba(240,180,41,.15);--gold-g:rgba(240,180,41,.3);
+  --green:#10b981;--red:#ef4444;
+  --t1:#f1f5f9;--t2:#94a3b8;--t3:#475569;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --font:'Sora',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--navy);color:var(--t1);display:flex;align-items:center;justify-content:center;}
+
+/* animated background */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(240,180,41,.06) 0%,transparent 70%),
+             radial-gradient(ellipse 60% 40% at 80% 100%,rgba(16,185,129,.05) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+.card{
+  width:min(440px,94vw);background:var(--navy2);border:1px solid var(--border2);
+  border-radius:24px;padding:40px 36px;box-shadow:0 24px 64px rgba(0,0,0,.6);
+  animation:popIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:none}}
+
+.logo{display:flex;align-items:center;gap:14px;margin-bottom:28px}
+.logo-flame{font-size:42px;filter:drop-shadow(0 0 14px var(--gold-g));animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.logo-name{font-size:26px;font-weight:800;letter-spacing:-1px}
+.logo-name span{color:var(--gold)}
+.logo-sub{font-size:12px;color:var(--t3);margin-top:2px}
+
+/* tabs */
+.tabs{display:flex;gap:0;background:var(--navy3);border-radius:10px;padding:4px;margin-bottom:28px}
+.tab{flex:1;padding:9px;border:none;background:none;color:var(--t2);font-family:var(--font);font-size:13px;font-weight:500;border-radius:7px;cursor:pointer;transition:all .2s}
+.tab.active{background:var(--gold);color:var(--navy);font-weight:700}
+
+/* forms */
+.form{display:none;flex-direction:column;gap:16px}
+.form.active{display:flex}
+.field label{display:block;font-size:11.5px;font-weight:600;color:var(--t2);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+.field input{
+  width:100%;padding:12px 14px;background:var(--navy3);border:1.5px solid var(--border2);
+  border-radius:10px;color:var(--t1);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;
+}
+.field input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-d)}
+.field input::placeholder{color:var(--t3)}
+
+.btn-submit{
+  width:100%;padding:13px;background:var(--gold);color:var(--navy);border:none;
+  border-radius:10px;font-family:var(--font);font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .2s;margin-top:4px;
+}
+.btn-submit:hover{background:#f6c90e;box-shadow:0 4px 20px var(--gold-g);transform:translateY(-1px)}
+.btn-submit:disabled{background:var(--navy4);color:var(--t3);cursor:not-allowed;transform:none;box-shadow:none}
+
+.msg{padding:10px 14px;border-radius:8px;font-size:13px;text-align:center;display:none}
+.msg.error{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.msg.success{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7}
+.msg.show{display:block}
+
+.divider{display:flex;align-items:center;gap:10px;color:var(--t3);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.footer-note{text-align:center;font-size:12px;color:var(--t3);margin-top:4px}
+.footer-note span{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-flame">🔥</div>
+    <div>
+      <div class="logo-name">Ha<span>shira</span></div>
+      <div class="logo-sub">AI Study Companion</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login')">Sign In</button>
+    <button class="tab" onclick="switchTab('register')">Register</button>
+  </div>
+
+  <div id="msg" class="msg"></div>
+
+  <!-- LOGIN FORM -->
+  <div class="form active" id="login-form">
+    <div class="field">
+      <label>Username or Email</label>
+      <input type="text" id="login-user" placeholder="Enter username or email" autocomplete="username"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password"/>
+    </div>
+    <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="footer-note">Default admin: <span>admin / admin123</span></div>
+  </div>
+
+  <!-- REGISTER FORM -->
+  <div class="form" id="register-form">
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="reg-user" placeholder="Choose a username"/>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="reg-email" placeholder="your@email.com"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="reg-pass" placeholder="At least 6 characters"/>
+    </div>
+    <button class="btn-submit" id="reg-btn" onclick="doRegister()">Create Account →</button>
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) =>
+    t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register')));
+  document.getElementById('login-form').classList.toggle('active', tab==='login');
+  document.getElementById('register-form').classList.toggle('active', tab==='register');
+  showMsg('','');
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg' + (text ? ' show ' + type : '');
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const loginActive = document.getElementById('login-form').classList.contains('active');
+  if (loginActive) doLogin(); else doRegister();
+});
+
+async function doLogin() {
+  const btn  = document.getElementById('login-btn');
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (!user || !pass) { showMsg('Please fill in all fields','error'); return; }
+
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try {
+    const r = await fetch('/api/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:user, password:pass})
+    });
+    const d = await r.json();
+    if (d.success) {
+      showMsg('Welcome back! Redirecting...','success');
+      setTimeout(() => window.location.href = d.role==='admin' ? '/admin' : '/', 800);
+    } else {
+      showMsg(d.error || 'Login failed','error');
+      btn.disabled=false; btn.textContent='Sign In →';
+    }
+  } catch {
+    showMsg('Server error. Is Flask running?','error');
+    btn.disabled=false; btn.textContent='Sign In →';
+  }
+}
+
+async function doRegister() {
+  const btn   = document.getElementById('reg-btn');
+  const user  = document.getElementById('reg-user').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  if (!user || !email || !pass) { showMsg('Please fill in all fields','error'); return; }
+
+  btn.disabled=true; btn.textContent='Creating account...';
+  try {
+    const r = await fetch('/api/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:user, email, password:pass})
+    });
+    const d = await r.json();
+    if (d.success) {
+      showMsg('Account created! Signing you in...','success');
+      setTimeout(() => switchTab('login'), 1200);
+    } else {
+      showMsg(d.error || 'Registration failed','error');
+    }
+  } catch {
+    showMsg('Server error. Is Flask running?','error');
+  }
+  btn.disabled=false; btn.textContent='Create Account →';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hashira — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#07090f;--navy2:#0e1420;--navy3:#151d2e;--navy4:#1c273d;
+  --gold:#f0b429;--gold-d:rgba(240,180,41,.12);
+  --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+  --t1:#f1f5f9;--t2:#94a3b8;--t3:#475569;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --font:'Sora',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--navy);color:var(--t1);display:flex;flex-direction:column}
+
+header{
+  background:var(--navy2);border-bottom:1px solid var(--border2);
+  padding:14px 28px;display:flex;align-items:center;gap:14px;flex-shrink:0;
+}
+.h-logo{font-size:22px;filter:drop-shadow(0 0 8px rgba(240,180,41,.4))}
+.h-title{font-size:16px;font-weight:700}
+.h-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+.h-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.btn-sm{padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--navy3);color:var(--t2);font-family:var(--font);font-size:12.5px;cursor:pointer;transition:all .2s}
+.btn-sm:hover{background:var(--navy4);color:var(--t1)}
+.btn-sm.danger{border-color:rgba(239,68,68,.3);color:#fca5a5}
+.btn-sm.danger:hover{background:rgba(239,68,68,.1)}
+
+.main{flex:1;overflow:auto;padding:28px}
+
+/* Stats row */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--navy2);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:6px}
+.stat-label{font-size:11px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+.stat-val{font-size:28px;font-weight:800;letter-spacing:-1px}
+.stat-val.gold{color:var(--gold)}
+.stat-val.green{color:var(--green)}
+.stat-val.blue{color:var(--blue)}
+.stat-val.red{color:var(--red)}
+
+/* Table */
+.table-card{background:var(--navy2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.table-header{padding:18px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.table-title{font-size:15px;font-weight:700}
+.table-count{font-size:12px;color:var(--t3)}
+
+table{width:100%;border-collapse:collapse}
+th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);background:var(--navy3)}
+td{padding:14px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+.avatar-cell{display:flex;align-items:center;gap:10px}
+.user-avatar{width:32px;height:32px;border-radius:8px;background:var(--navy4);display:flex;align-items:center;justify-content:center;font-size:16px}
+.user-name{font-weight:600}
+.user-email{font-size:11px;color:var(--t3);margin-top:1px}
+
+.role-badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:700}
+.role-badge.admin{background:rgba(240,180,41,.15);color:var(--gold);border:1px solid rgba(240,180,41,.3)}
+.role-badge.user{background:var(--navy3);color:var(--t2);border:1px solid var(--border)}
+
+.actions{display:flex;gap:6px}
+.act-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--t2);font-family:var(--font);font-size:11.5px;cursor:pointer;transition:all .2s}
+.act-btn:hover{background:var(--navy4);color:var(--t1)}
+.act-btn.del:hover{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.4);color:#fca5a5}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy3);border:1px solid var(--border2);color:var(--t1);padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;transition:all .3s;transform:translateY(10px)}
+.toast.show{opacity:1;transform:none}
+
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.stats{grid-template-columns:1fr}.h-title{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="h-logo">🔥</div>
+  <div class="h-title">Hashira Admin</div>
+  <div class="h-badge">ADMIN</div>
+  <div class="h-right">
+    <span style="font-size:12px;color:var(--t3)">{{ username }}</span>
+    <button class="btn-sm" onclick="window.location.href='/'">← Back to Chat</button>
+    <button class="btn-sm danger" onclick="doLogout()">Logout</button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Stats -->
+  <div class="stats" id="stats">
+    <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-val gold" id="s-users">—</div></div>
+    <div class="stat-card"><div class="stat-label">Total Sessions</div><div class="stat-val blue" id="s-sessions">—</div></div>
+    <div class="stat-card"><div class="stat-label">Total Messages</div><div class="stat-val green" id="s-messages">—</div></div>
+    <div class="stat-card"><div class="stat-label">Active Today</div><div class="stat-val red" id="s-today">—</div></div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">👥 All Users</div>
+      <div class="table-count" id="user-count">Loading...</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>User</th><th>Role</th><th>Sessions</th><th>Messages</th><th>Last Login</th><th>Joined</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="user-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+async function load() {
+  // Stats
+  const sr = await fetch('/api/admin/stats');
+  const sd = await sr.json();
+  document.getElementById('s-users').textContent    = sd.total_users;
+  document.getElementById('s-sessions').textContent = sd.total_sessions;
+  document.getElementById('s-messages').textContent = sd.total_messages;
+  document.getElementById('s-today').textContent    = sd.active_today;
+
+  // Users
+  const ur = await fetch('/api/admin/users');
+  const ud = await ur.json();
+  document.getElementById('user-count').textContent = ud.users.length + ' users';
+  const tbody = document.getElementById('user-table');
+  tbody.innerHTML = ud.users.map(u => `
+    <tr>
+      <td><div class="avatar-cell">
+        <div class="user-avatar">${u.avatar}</div>
+        <div><div class="user-name">${u.username}</div><div class="user-email">${u.email}</div></div>
+      </div></td>
+      <td><span class="role-badge ${u.role}">${u.role}</span></td>
+      <td>${u.session_count}</td>
+      <td>${u.message_count}</td>
+      <td style="color:var(--t2);font-size:12px">${u.last_login.slice(0,16)}</td>
+      <td style="color:var(--t2);font-size:12px">${u.created_at.slice(0,10)}</td>
+      <td><div class="actions">
+        ${u.role!=='admin' ? `<button class="act-btn" onclick="promote(${u.id})">Make Admin</button>` : ''}
+        <button class="act-btn del" onclick="deleteUser(${u.id},'${u.username}')">Delete</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+async function promote(uid) {
+  if(!confirm('Promote this user to admin?')) return;
+  await fetch('/api/admin/promote/'+uid, {method:'POST'});
+  toast('✅ User promoted to admin');
+  load();
+}
+
+async function deleteUser(uid, name) {
+  if(!confirm(`Delete user "${name}"? This removes all their data.`)) return;
+  const r = await fetch('/api/admin/users/'+uid, {method:'DELETE'});
+  const d = await r.json();
+  if(d.success){ toast('🗑️ User deleted'); load(); }
+  else toast('❌ '+d.error);
+}
+
+async function doLogout() {
+  await fetch('/api/logout', {method:'POST'});
+  window.location.href = '/login';
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+load();
+setInterval(load, 30000); // refresh every 30s
+</script>
+</body>
+</html>
